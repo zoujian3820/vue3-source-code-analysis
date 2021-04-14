@@ -530,10 +530,13 @@ export function setupComponent(
 
   const { props, children } = instance.vnode
   const isStateful = isStatefulComponent(instance)
+  // 处理props
   initProps(instance, props, isStateful, isSSR)
+  // 处理插槽
   initSlots(instance, children)
 
   const setupResult = isStateful
+    //  数据响应式处理
     ? setupStatefulComponent(instance, isSSR)
     : undefined
   isInSSRComponentSetup = false
@@ -544,6 +547,7 @@ function setupStatefulComponent(
   instance: ComponentInternalInstance,
   isSSR: boolean
 ) {
+  // 根组件配置对象
   const Component = instance.type as ComponentOptions
 
   if (__DEV__) {
@@ -567,11 +571,14 @@ function setupStatefulComponent(
   instance.accessCache = Object.create(null)
   // 1. create public instance / render proxy
   // also mark it raw so it's never observed
+  // 渲染函数的上下文，数据响应式代理
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandlers)
   if (__DEV__) {
     exposePropsOnRenderContext(instance)
   }
   // 2. call setup()
+  // 处理setup选项
+  // setup选项和data(){return {}}可同时存在，但setup优先级更高
   const { setup } = Component
   if (setup) {
     const setupContext = (instance.setupContext =
@@ -612,6 +619,7 @@ function setupStatefulComponent(
       handleSetupResult(instance, setupResult, isSSR)
     }
   } else {
+    // 没有setup走这里
     finishComponentSetup(instance, isSSR)
   }
 }
@@ -719,6 +727,7 @@ function finishComponentSetup(
   }
 
   // support for 2.x options
+  // 兼容vue2.0 处理其他用户选项
   if (__FEATURE_OPTIONS_API__) {
     currentInstance = instance
     pauseTracking()

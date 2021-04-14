@@ -111,3 +111,14 @@ It is recommended to use [VSCode](https://code.visualstudio.com/). There are cur
 [rpv-badge]: https://img.shields.io/npm/v/rollup-plugin-vue/next.svg
 [rpv-npm]: https://www.npmjs.com/package/rollup-plugin-vue/v/next
 [rpv-code]: https://github.com/vuejs/rollup-plugin-vue/tree/next
+
+
+##  依赖安装 
+yarn --ignore-scripts
+
+## 准备调试
+- 添加 --sourcemap
+    ```
+    "dev": "node scripts/dev.js --sourcemap",
+    ```
+- 执行 yarn dev     

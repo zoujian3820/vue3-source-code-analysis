@@ -6,3 +6,6 @@ temp
 explorations
 TODOs.md
 *.log
+.history
+.idea
+.vscode

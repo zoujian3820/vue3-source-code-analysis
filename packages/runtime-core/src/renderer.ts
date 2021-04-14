@@ -441,6 +441,7 @@ function baseCreateRenderer(
   createHydrationFns?: typeof createHydrationFunctions
 ): any {
   // compile-time feature flags check
+  // 渲染器的工厂函数
   if (__ESM_BUNDLER__ && !__TEST__) {
     initFeatureFlags()
   }
@@ -471,8 +472,8 @@ function baseCreateRenderer(
   // Note: functions inside this closure should use `const xxx = () => {}`
   // style in order to prevent being inlined by minifiers.
   const patch: PatchFn = (
-    n1,
-    n2,
+    n1, // 老的虚拟节点
+    n2, // 新的虚拟节点
     container,
     anchor = null,
     parentComponent = null,
@@ -492,7 +493,7 @@ function baseCreateRenderer(
       optimized = false
       n2.dynamicChildren = null
     }
-
+    // 获取新节点的类型
     const { type, ref, shapeFlag } = n2
     switch (type) {
       case Text:
@@ -535,6 +536,7 @@ function baseCreateRenderer(
             optimized
           )
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          // 初始化走这里
           processComponent(
             n1,
             n2,
@@ -1268,6 +1270,7 @@ function baseCreateRenderer(
           optimized
         )
       } else {
+        // 初始化
         mountComponent(
           n2,
           container,
@@ -1292,6 +1295,7 @@ function baseCreateRenderer(
     isSVG,
     optimized
   ) => {
+    // 1. 创建组件实例
     const instance: ComponentInternalInstance = (initialVNode.component = createComponentInstance(
       initialVNode,
       parentComponent,
@@ -1313,9 +1317,11 @@ function baseCreateRenderer(
     }
 
     // resolve props and slots for setup context
+    //
     if (__DEV__) {
       startMeasure(instance, `init`)
     }
+    // 组件的安装： 类似于vue2中的this._init() 做初始化
     setupComponent(instance)
     if (__DEV__) {
       endMeasure(instance, `init`)
@@ -1334,7 +1340,7 @@ function baseCreateRenderer(
       }
       return
     }
-
+    //增加渲染函数副作用
     setupRenderEffect(
       instance,
       initialVNode,
@@ -1415,6 +1421,8 @@ function baseCreateRenderer(
         if (__DEV__) {
           startMeasure(instance, `render`)
         }
+        // 先获取当前根组件的vnode
+        // 其实就是执行了render函数得到了虚拟dom
         const subTree = (instance.subTree = renderComponentRoot(instance))
         if (__DEV__) {
           endMeasure(instance, `render`)
@@ -1439,6 +1447,7 @@ function baseCreateRenderer(
           if (__DEV__) {
             startMeasure(instance, `patch`)
           }
+          // 初始化patch
           patch(
             null,
             subTree,
@@ -2279,6 +2288,9 @@ function baseCreateRenderer(
         unmount(container._vnode, null, null, true)
       }
     } else {
+      // 初始化走这里，这里就类似vue2
+      // 参数1存在则走更新
+      // 参数1一不存在则走挂载流程
       patch(container._vnode || null, vnode, container, null, null, null, isSVG)
     }
     flushPostFlushCbs()
@@ -2307,9 +2319,14 @@ function baseCreateRenderer(
     >)
   }
 
+  // 此处返回的对像，就是渲染器
+  // 有三个方法
   return {
+    // 渲染方法, 把虚拟dom转换为真实dom追加到容器上 render(vnode, container)
     render,
+    // 注水，服务器渲染用到
     hydrate,
+    // 创建应用程序实例的方法
     createApp: createAppAPI(render, hydrate)
   }
 }
