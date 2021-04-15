@@ -117,6 +117,8 @@ function createConfig(format, output, plugins = []) {
   hasTSChecked = true
 
   // 打包的入口文件
+  // 我们这次看的是浏览器的版本，所以是src/index.ts
+  // runtime webpack运行时的版本
   const entryFile = /runtime$/.test(format) ? `src/runtime.ts` : `src/index.ts`
 
   const external =

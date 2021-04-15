@@ -121,4 +121,29 @@ yarn --ignore-scripts
     ```
     "dev": "node scripts/dev.js --sourcemap",
     ```
-- 执行 yarn dev     
+- 执行 yarn dev    
+
+## 入口文件
+- 从执行命令npm run dev开始
+```javascript
+// "dev": "node scripts/dev.js --sourcemap"
+// 找到 scripts/dev.js 发现 TARGET 默认为 vue
+```
+- 从rollup打包配置文件rollup.config.js中入手
+```javascript
+  // 打包的入口文件
+  // 我们这次看的是浏览器的版本，所以是src/index.ts
+  // runtime webpack运行时的版本
+  const entryFile = /runtime$/.test(format) ? `src/runtime.ts` : `src/index.ts`
+  
+  // packages/
+  const packagesDir = path.resolve(__dirname, 'packages')
+  // 默认的packages/vue
+  const packageDir = path.resolve(packagesDir, process.env.TARGET)
+  const name = path.basename(packageDir)
+  const resolve = p => path.resolve(packageDir, p)
+  
+   // 入口文件配置
+   // input: resolve(entryFile),
+   // 由此找到入口文件是 packages/vue/src/index.ts
+```
