@@ -15,7 +15,7 @@ import {
   VNodeProps
 } from './vnode'
 import {
-  ComponentInternalInstance,
+  ComponentInternalInstance, ConcreteComponent,
   createComponentInstance,
   Data,
   setupComponent
@@ -482,9 +482,14 @@ function baseCreateRenderer(
     slotScopeIds = null,
     optimized = false
   ) => {
+    // n1存在则走更新
+    // n1不存在则走挂载流程
+
     // patching & not same type, unmount old tree
+    // 新Vnode存在，并且与旧vnode不相同
     if (n1 && !isSameVNodeType(n1, n2)) {
       anchor = getNextHostNode(n1)
+      // 则卸载旧的vnode
       unmount(n1, parentComponent, parentSuspense, true)
       n1 = null
     }
@@ -496,12 +501,15 @@ function baseCreateRenderer(
     // 获取新节点的类型
     const { type, ref, shapeFlag } = n2
     switch (type) {
+      // 文本
       case Text:
         processText(n1, n2, container, anchor)
         break
+      // 注释
       case Comment:
         processCommentNode(n1, n2, container, anchor)
         break
+      // 静态节点，不会变的节点
       case Static:
         if (n1 == null) {
           mountStaticNode(n2, container, anchor, isSVG)
@@ -509,6 +517,7 @@ function baseCreateRenderer(
           patchStaticNode(n1, n2, container, isSVG)
         }
         break
+      // 抽象的虚拟节点(父容器)，解决vue2单根节点问题，Vue3可以多根节点
       case Fragment:
         processFragment(
           n1,
@@ -537,6 +546,17 @@ function baseCreateRenderer(
           )
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
           // 初始化走这里
+          // 因为初始化执行mount时, 做了以下处理
+          /*
+            把createApp({})中的传参当成了一个vnode组件处理 类型为一个对象
+            const vnode = createVNode(
+                rootComponent as ConcreteComponent,
+                rootProps
+            )
+
+            // 不是服务端渲染，客户端渲染默认走这里
+            render(vnode, rootContainer, isSVG)
+          */
           processComponent(
             n1,
             n2,
@@ -1249,8 +1269,8 @@ function baseCreateRenderer(
   }
 
   const processComponent = (
-    n1: VNode | null,
-    n2: VNode,
+    n1: VNode | null, // 旧vnode
+    n2: VNode,  // 新vnode
     container: RendererElement,
     anchor: RendererNode | null,
     parentComponent: ComponentInternalInstance | null,
@@ -1260,6 +1280,8 @@ function baseCreateRenderer(
     optimized: boolean
   ) => {
     n2.slotScopeIds = slotScopeIds
+    // 初始化时为null  因为 container 为#app 调用mount时传入的id
+    // 所以没有旧的vnode
     if (n1 == null) {
       if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
         ;(parentComponent!.ctx as KeepAliveContext).activate(
@@ -1270,7 +1292,7 @@ function baseCreateRenderer(
           optimized
         )
       } else {
-        // 初始化
+        // 所以初始化走这
         mountComponent(
           n2,
           container,
@@ -1321,7 +1343,15 @@ function baseCreateRenderer(
     if (__DEV__) {
       startMeasure(instance, `init`)
     }
-    // 组件的安装： 类似于vue2中的this._init() 做初始化
+    // 组件的安装： 类似vue2的new Vue()时vue2构造器中执行的 this._init(options) 做初始化
+    // 回想vue2中new Vue时做了哪些操作呢
+    //  1. 做了用户配置选项和系统配置选项的合并
+    //  2. 实例相关的属性进了初始化 如: $parent $root $children $refs
+    //  3. 监听自己的自定义事件
+    //  4. 解析自己的插槽
+    //  5. 同时会把自己内部的一些数据进行响应式的处理 如: props(属性) methosds(方法) data computed watch
+
+    // 这里其实做的也是这些操作
     setupComponent(instance)
     if (__DEV__) {
       endMeasure(instance, `init`)
@@ -1340,7 +1370,9 @@ function baseCreateRenderer(
       }
       return
     }
-    //增加渲染函数副作用
+    // 增加渲染函数副作用
+    // 里面执行的是渲染函数，然后让当前的渲染函数重新获得虚拟dom
+    // 当前组件重新更新，然后重新patch
     setupRenderEffect(
       instance,
       initialVNode,
@@ -2282,8 +2314,12 @@ function baseCreateRenderer(
     return hostNextSibling((vnode.anchor || vnode.el)!)
   }
 
+  // render函数的作用，就是把vnode转换成真实的dom并追加到container中
   const render: RootRenderFunction = (vnode, container, isSVG) => {
+    // container 初始化时为 #app
     if (vnode == null) {
+      // vnode 新节点不存在
+      // 并且存在老节点，则卸载老节点
       if (container._vnode) {
         unmount(container._vnode, null, null, true)
       }
@@ -2322,7 +2358,7 @@ function baseCreateRenderer(
   // 此处返回的对像，就是渲染器
   // 有三个方法
   return {
-    // 渲染方法, 把虚拟dom转换为真实dom追加到容器上 render(vnode, container)
+    // 渲染方法, 把虚拟dom转换为真实dom追加到容器container中 render(vnode, container)
     render,
     // 注水，服务器渲染用到
     hydrate,

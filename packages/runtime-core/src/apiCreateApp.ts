@@ -137,6 +137,17 @@ export function createAppAPI<HostElement>(
 
     let isMounted = false
 
+    // 以下这些方法都反回了app实例，所以可以链式调用
+    // 对比Vue2以下方法由静态方法转为了实例方法
+    // 为何要调整为实例方法？
+      // 1. 避免实例之间的污染
+      // 2. 语义上更好理解
+      // 3. 摇树优化 tree-shake
+         // 摇树优化:
+              // 如 app.use({install(){}})初始化了一个插件
+              // 但是在代码中，实际没有使用到这个插件
+              // 所代码在打包时，这个插件是不会被打包进去
+
     // 应用程序实例
     const app: App = (context.app = {
       _uid: uid++,
@@ -159,6 +170,9 @@ export function createAppAPI<HostElement>(
         }
       },
 
+      // 插件使用方法初始化
+      // 传进去的第一个参数是app实例
+      // vue2中传入的第一个参数为Vue本身（构造函数）
       use(plugin: Plugin, ...options: any[]) {
         if (installedPlugins.has(plugin)) {
           __DEV__ && warn(`Plugin has already been applied to target app.`)
@@ -177,6 +191,7 @@ export function createAppAPI<HostElement>(
         return app
       },
 
+      // 混入方法初始化
       mixin(mixin: ComponentOptions) {
         if (__FEATURE_OPTIONS_API__) {
           if (!context.mixins.includes(mixin)) {
@@ -198,6 +213,7 @@ export function createAppAPI<HostElement>(
         return app
       },
 
+      // 初始化组件方法
       component(name: string, component?: Component): any {
         if (__DEV__) {
           validateComponentName(name, context.config)
@@ -212,6 +228,7 @@ export function createAppAPI<HostElement>(
         return app
       },
 
+      // 初始化指令方法
       directive(name: string, directive?: Directive) {
         if (__DEV__) {
           validateDirectiveName(name)
@@ -226,7 +243,7 @@ export function createAppAPI<HostElement>(
         context.directives[name] = directive
         return app
       },
-      // 初始化走这里
+      // 挂载初始化走这里
       mount(
         rootContainer: HostElement,
         isHydrate?: boolean,
@@ -253,6 +270,7 @@ export function createAppAPI<HostElement>(
             hydrate(vnode as VNode<Node, Element>, rootContainer as any)
           } else {
             // 不是服务端渲染，客户端渲染默认走这里
+            // rootContainer 初始化时为 #app
             render(vnode, rootContainer, isSVG)
           }
           isMounted = true
@@ -275,6 +293,7 @@ export function createAppAPI<HostElement>(
         }
       },
 
+      // 卸载初始化
       unmount() {
         if (isMounted) {
           render(null, app._container)
@@ -287,6 +306,8 @@ export function createAppAPI<HostElement>(
         }
       },
 
+      // 依赖注入 多层次嵌套通信
+      // 此方法可解决注册全局方法的问题
       provide(key, value) {
         if (__DEV__ && (key as string | symbol) in context.provides) {
           warn(

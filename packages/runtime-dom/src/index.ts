@@ -22,6 +22,8 @@ declare module '@vue/reactivity' {
   }
 }
 
+// 这里是一些平台特性的操作， 当成createRenderer的参数传入
+// 包含了一些dom的原生操作
 const rendererOptions = extend({ patchProp, forcePatchProp }, nodeOps)
 
 // lazy create the renderer - this makes core renderer logic tree-shakable
@@ -55,6 +57,7 @@ export const hydrate = ((...args) => {
 }) as RootHydrateFunction
 
 // 这个就是我们使用的createApp
+// 后面的as是ts的关键字，是用来限制当前的类型
 export const createApp = ((...args) => {
   // 首先获取一个渲染器
   // 实际上createApp方法是由渲染器提供的
@@ -67,10 +70,12 @@ export const createApp = ((...args) => {
 
   const { mount } = app
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
+    // 通过选择器返回真实的元素
     const container = normalizeContainer(containerOrSelector)
     if (!container) return
     const component = app._component
     if (!isFunction(component) && !component.render && !component.template) {
+      // 如果不是函数组件，或者没有render或者没有模版，则把当前的元素内容当template
       component.template = container.innerHTML
     }
     // clear content before mounting

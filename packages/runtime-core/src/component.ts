@@ -547,7 +547,19 @@ function setupStatefulComponent(
   instance: ComponentInternalInstance,
   isSSR: boolean
 ) {
-  // 根组件配置对象
+  // 由于初始化时，传进来的是一个配置obj转换的vnode,
+  // 所以这里type 就是根组件配置对象
+  // createApp({
+  //    data() {
+  //      return { aa: 'haha' }
+  //    }
+
+  //  setup选项和data(){return {}}可同时存在，但setup优先级更高
+  //    setup() {
+  //       const aa = ref('haha')
+  //       return { aa }
+  //    }
+  // })
   const Component = instance.type as ComponentOptions
 
   if (__DEV__) {
@@ -571,7 +583,12 @@ function setupStatefulComponent(
   instance.accessCache = Object.create(null)
   // 1. create public instance / render proxy
   // also mark it raw so it's never observed
-  // 渲染函数的上下文，数据响应式代理
+
+  // 给根组件配置对象 做了代理操作 即渲染函数的上下文，数据响应式代理
+  // 渲染函数中将来访问的响应式数据都在proxy这里拿
+  // 通过 const instance = getCurrentInstance(); 可以在 setup(){}中获取
+  // const { ctx, proxy } = instance
+  // PublicInstanceProxyHandlers中会先从setup中去查找属性，如果没有才会去data中查找
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandlers)
   if (__DEV__) {
     exposePropsOnRenderContext(instance)
@@ -579,6 +596,7 @@ function setupStatefulComponent(
   // 2. call setup()
   // 处理setup选项
   // setup选项和data(){return {}}可同时存在，但setup优先级更高
+  // PublicInstanceProxyHandlers中会先从setup中去查找属性，如果没有才会去data中查找
   const { setup } = Component
   if (setup) {
     const setupContext = (instance.setupContext =
@@ -619,7 +637,7 @@ function setupStatefulComponent(
       handleSetupResult(instance, setupResult, isSSR)
     }
   } else {
-    // 没有setup走这里
+    // createApp配置项中没有setup 则走这里
     finishComponentSetup(instance, isSSR)
   }
 }
@@ -727,7 +745,7 @@ function finishComponentSetup(
   }
 
   // support for 2.x options
-  // 兼容vue2.0 处理其他用户选项
+  // applyOptions 兼容vue2.0 处理其他用户选项
   if (__FEATURE_OPTIONS_API__) {
     currentInstance = instance
     pauseTracking()
