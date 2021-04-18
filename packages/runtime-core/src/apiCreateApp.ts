@@ -132,7 +132,9 @@ export function createAppAPI<HostElement>(
       rootProps = null
     }
 
+    // 获取当前实例的上下文
     const context = createAppContext()
+    // 用set集合存储插件，可避免重复
     const installedPlugins = new Set()
 
     let isMounted = false

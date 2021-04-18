@@ -718,10 +718,12 @@ function finishComponentSetup(
       NOOP) as InternalRenderFunction
   } else if (!instance.render) {
     // could be set from setup()
+    // 如果没有render函数 并且存在编绎器和模版文件
     if (compile && Component.template && !Component.render) {
       if (__DEV__) {
         startMeasure(instance, `compile`)
       }
+      // 则通过编绎器compile把模版转换成render函数
       Component.render = compile(Component.template, {
         isCustomElement: instance.appContext.config.isCustomElement,
         delimiters: Component.delimiters

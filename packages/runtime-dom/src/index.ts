@@ -36,6 +36,7 @@ function ensureRenderer() {
   // 渲染器
   // 单例模式
   // 存就返回，不存在创建
+  // rendererOptions 这里是一些平台特性的操作
   return renderer || (renderer = createRenderer<Node, Element>(rendererOptions))
 }
 
