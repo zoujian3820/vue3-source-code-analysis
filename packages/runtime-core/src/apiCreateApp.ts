@@ -253,6 +253,7 @@ export function createAppAPI<HostElement>(
       ): any {
         if (!isMounted) {
           // 初始化的虚拟dom树
+          // shapeFlag 也在里面定义  - 对 vnode 类型信息编码
           const vnode = createVNode(
             rootComponent as ConcreteComponent,
             rootProps
@@ -272,7 +273,7 @@ export function createAppAPI<HostElement>(
             hydrate(vnode as VNode<Node, Element>, rootContainer as any)
           } else {
             // 不是服务端渲染，客户端渲染默认走这里
-            // rootContainer 初始化时为 #app
+            // rootContainer 初始化时为 #app根元素
             render(vnode, rootContainer, isSVG)
           }
           isMounted = true

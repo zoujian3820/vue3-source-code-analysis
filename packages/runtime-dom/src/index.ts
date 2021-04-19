@@ -36,7 +36,7 @@ function ensureRenderer() {
   // 渲染器
   // 单例模式
   // 存就返回，不存在创建
-  // rendererOptions 这里是一些平台特性的操作
+  // rendererOptions 这里是一些平台特性的操作 如 dom 操作都在这个里面
   return renderer || (renderer = createRenderer<Node, Element>(rendererOptions))
 }
 
@@ -80,6 +80,8 @@ export const createApp = ((...args) => {
       component.template = container.innerHTML
     }
     // clear content before mounting
+    // 清除当前根元素(#app)的内容
+    // 因为上面已经拿了他的innerHtml当template
     container.innerHTML = ''
     const proxy = mount(container, false, container instanceof SVGElement)
     if (container instanceof Element) {

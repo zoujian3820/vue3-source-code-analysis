@@ -38,7 +38,7 @@ import {
   hasOwn,
   invokeArrayFns,
   isArray,
-  getGlobalThis
+  getGlobalThis, extend
 } from '@vue/shared'
 import {
   queueJob,
@@ -85,6 +85,8 @@ import {
 } from './devtools'
 import { initFeatureFlags } from './featureFlags'
 import { isAsyncWrapper } from './apiAsyncComponent'
+import {forcePatchProp, patchProp} from "@vue/runtime-dom/src/patchProp";
+import {nodeOps} from "@vue/runtime-dom/src/nodeOps";
 
 export interface Renderer<HostElement = RendererElement> {
   render: RootRenderFunction<HostElement>
@@ -769,6 +771,11 @@ function baseCreateRenderer(
       // only do this in production since cloned trees cannot be HMR updated.
       el = vnode.el = hostCloneNode(vnode.el)
     } else {
+      // 创建元素  cosnt{ createElement: hostCreateElement } = options
+      // createElement 在 createRenderer调用时传递的 rendererOptions 参数中
+      // const rendererOptions = extend({ patchProp, forcePatchProp }, nodeOps)
+      // createElement 就在 nodeOps 中 doc.createElement(tag, is ? { is } : undefined)
+      // 此时vnode.type为tagName
       el = vnode.el = hostCreateElement(
         vnode.type as string,
         isSVG,
@@ -778,9 +785,15 @@ function baseCreateRenderer(
 
       // mount children first, since some props may rely on child content
       // being already rendered, e.g. `<select value>`
+      // 发现是文本节点
       if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        // 则直接设置文本 setElementText: hostSetElementText
+        // setElementText: (el, text) => {
+        //   el.textContent = text
+        // }
         hostSetElementText(el, vnode.children as string)
       } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // 如果是一个子节点数组， 则继续去挂载子节点
         mountChildren(
           vnode.children as VNodeArrayChildren,
           el,
@@ -793,10 +806,12 @@ function baseCreateRenderer(
         )
       }
 
+
       if (dirs) {
         invokeDirectiveHook(vnode, null, parentComponent, 'created')
       }
       // props
+      // props的处理
       if (props) {
         for (const key in props) {
           if (!isReservedProp(key)) {
@@ -842,7 +857,9 @@ function baseCreateRenderer(
     if (needCallTransitionHooks) {
       transition!.beforeEnter(el)
     }
+    // 把节点insert到 container（#app） 中 且位于  anchor（应该是一个空的文本节点）节点之前
     hostInsert(el, container, anchor)
+
     if (
       (vnodeHook = props && props.onVnodeMounted) ||
       needCallTransitionHooks ||

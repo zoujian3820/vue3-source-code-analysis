@@ -22,6 +22,7 @@ export const nodeOps: Omit<RendererOptions<Node, Element>, 'patchProp'> = {
   createElement: (tag, isSVG, is, props): Element => {
     const el = isSVG
       ? doc.createElementNS(svgNS, tag)
+        //is:  新元素将被赋予is属性，其值为自定义元素的标签名称。
       : doc.createElement(tag, is ? { is } : undefined)
 
     if (tag === 'select' && props && props.multiple != null) {

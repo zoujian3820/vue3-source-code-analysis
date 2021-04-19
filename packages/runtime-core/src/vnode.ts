@@ -380,15 +380,15 @@ function _createVNode(
 
   // encode the vnode type information into a bitmap
   const shapeFlag = isString(type)
-    ? ShapeFlags.ELEMENT
+    ? ShapeFlags.ELEMENT // 1
     : __FEATURE_SUSPENSE__ && isSuspense(type)
-      ? ShapeFlags.SUSPENSE
+      ? ShapeFlags.SUSPENSE  // 128
       : isTeleport(type)
-        ? ShapeFlags.TELEPORT
+        ? ShapeFlags.TELEPORT  // 64
         : isObject(type)
-          ? ShapeFlags.STATEFUL_COMPONENT
+          ? ShapeFlags.STATEFUL_COMPONENT  // 4
           : isFunction(type)
-            ? ShapeFlags.FUNCTIONAL_COMPONENT
+            ? ShapeFlags.FUNCTIONAL_COMPONENT  // 2
             : 0
 
   if (__DEV__ && shapeFlag & ShapeFlags.STATEFUL_COMPONENT && isProxy(type)) {
