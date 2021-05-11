@@ -323,10 +323,26 @@ const normalizeRef = ({ ref }: VNodeProps): VNodeNormalizedRefAtom | null => {
     : null) as any
 }
 
+// 导出转换vnode 的转换函数 createVNode
 export const createVNode = (__DEV__
   ? createVNodeWithArgsTransform
   : _createVNode) as typeof _createVNode
 
+/*
+import { defineComponent, h, createVNode } from "vue";
+import HelloWorld from "./components/HelloWorld.vue";
+const img = require('./assets/logo.png'); // eslint-disable-line
+const App = defineComponent({
+  render() {
+    return h("div", { id: "app" }, [
+          h("img", { src: img }),
+          h(HelloWorld, { msg: "HelloWorld" }),
+          createVNode("h1", { class: "hello" }, "HelloWorld")
+        ]
+    );
+  },
+});
+*/
 function _createVNode(
   type: VNodeTypes | ClassComponent | typeof NULL_DYNAMIC_COMPONENT,
   props: (Data & VNodeProps) | null = null,
@@ -342,6 +358,7 @@ function _createVNode(
     type = Comment
   }
 
+  // 判断 __v_isVNode 是否为true 即是否是一个vnode
   if (isVNode(type)) {
     // createVNode receiving an existing vnode. This happens in cases like
     // <component :is="vnode"/>
@@ -359,27 +376,50 @@ function _createVNode(
   }
 
   // class & style normalization.
+  // 如果有 calssName 和 style 样式这些属性
   if (props) {
     // for reactive or proxy objects, we need to clone it to enable mutation.
+    // 如果props 是reactive对象或proxy代理对象，使用extend克隆它 防止数据引用 方便变更
     if (isProxy(props) || InternalObjectKey in props) {
       props = extend({}, props)
     }
+    // 用 klass 替换 class 这个key 可能因为 class 是关键字的原因
     let { class: klass, style } = props
+    // className存在，并且不是字符串
+    // 此时可能为多个，写成了对象形式 或者数组形式
+    // { class: {"aa1": isTrue1, "aa2": isTrue2} }  { class: ["aa1", "aa2"] }
     if (klass && !isString(klass)) {
+      // 判断是 字符串 还是 对象 还是 数组，并转换成平铺的 className
+      // 数组的话会执行递归，意味着数组内部，再写对象也是可以
+      // 'aa1 aa2 aa3 ...'
       props.class = normalizeClass(klass)
     }
+
+    // 如果style样式是一个对象
     if (isObject(style)) {
       // reactive state objects need to be cloned since they are likely to be
       // mutated
+      // 如果props 是reactive对象或proxy代理对象，
+      // 并且不是数组 使用extend克隆它 防止数据引用 方便变更
       if (isProxy(style) && !isArray(style)) {
         style = extend({}, style)
       }
+      // 判断 style 为数组 则遍历并做类型检测
+        // 如果是字符串则标准化一下 (做两次字符串切割) 处理成对象形式
+        // 所以样式最好直接写对象形式，以减少转换操作 和 递归
+        // 否则（如：对象 | 数组） 则递归一次，走相应处理
+      // 如果为对象就直接返回
       props.style = normalizeStyle(style)
     }
   }
 
   // encode the vnode type information into a bitmap
+
+  // import { defineComponent, h, createVNode } from "vue";
+  // h(HelloWorld, { msg: "HelloWorld" }),
+  // createVNode("h1", { class: "hello" }, "HelloWorld")
   const shapeFlag = isString(type)
+      // type是字符串，则是元素标签
     ? ShapeFlags.ELEMENT // 1
     : __FEATURE_SUSPENSE__ && isSuspense(type)
       ? ShapeFlags.SUSPENSE  // 128

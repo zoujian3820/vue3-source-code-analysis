@@ -246,6 +246,7 @@ export function createAppAPI<HostElement>(
         return app
       },
       // 挂载初始化走这里
+      // 实例化时最后，调用的.mount('#app')
       mount(
         rootContainer: HostElement,
         isHydrate?: boolean,
@@ -255,6 +256,7 @@ export function createAppAPI<HostElement>(
           // 初始化的虚拟dom树
           // shapeFlag 也在里面定义  - 对 vnode 类型信息编码
           const vnode = createVNode(
+            // rootComponent 为实例初始化时，传的对象{data(){return {}}}
             rootComponent as ConcreteComponent,
             rootProps
           )

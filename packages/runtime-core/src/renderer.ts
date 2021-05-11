@@ -548,12 +548,14 @@ function baseCreateRenderer(
             optimized
           )
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          // 对象就走这 vue3中对象就是组件
           // 组件处理
 
           // 初始化走这里
           // 因为初始化执行mount时, 做了以下处理
           /*
             把createApp({})中的传参当成了一个vnode组件处理 类型为一个对象
+            rootComponent 就是 {}
             const vnode = createVNode(
                 rootComponent as ConcreteComponent,
                 rootProps
