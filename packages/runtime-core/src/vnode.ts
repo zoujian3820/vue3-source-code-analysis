@@ -405,9 +405,9 @@ function _createVNode(
         style = extend({}, style)
       }
       // 判断 style 为数组 则遍历并做类型检测
-        // 如果是字符串则标准化一下 (做两次字符串切割) 处理成对象形式
-        // 所以样式最好直接写对象形式，以减少转换操作 和 递归
-        // 否则（如：对象 | 数组） 则递归一次，走相应处理
+      // 如果是字符串则标准化一下 (做两次字符串切割) 处理成对象形式
+      // 所以样式最好直接写对象形式，以减少转换操作 和 递归
+      // 否则（如：对象 | 数组） 则递归一次，走相应处理
       // 如果为对象就直接返回
       props.style = normalizeStyle(style)
     }
@@ -419,16 +419,16 @@ function _createVNode(
   // h(HelloWorld, { msg: "HelloWorld" }),
   // createVNode("h1", { class: "hello" }, "HelloWorld")
   const shapeFlag = isString(type)
-      // type是字符串，则是元素标签
-    ? ShapeFlags.ELEMENT // 1
+    ? // type是字符串，则是元素标签
+      ShapeFlags.ELEMENT // 1
     : __FEATURE_SUSPENSE__ && isSuspense(type)
-      ? ShapeFlags.SUSPENSE  // 128
+      ? ShapeFlags.SUSPENSE // 128
       : isTeleport(type)
-        ? ShapeFlags.TELEPORT  // 64
+        ? ShapeFlags.TELEPORT // 64
         : isObject(type)
-          ? ShapeFlags.STATEFUL_COMPONENT  // 4
+          ? ShapeFlags.STATEFUL_COMPONENT // 4
           : isFunction(type)
-            ? ShapeFlags.FUNCTIONAL_COMPONENT  // 2
+            ? ShapeFlags.FUNCTIONAL_COMPONENT // 2
             : 0
 
   if (__DEV__ && shapeFlag & ShapeFlags.STATEFUL_COMPONENT && isProxy(type)) {
@@ -646,7 +646,7 @@ export function normalizeChildren(vnode: VNode, children: unknown) {
   if (children == null) {
     children = null
   } else if (isArray(children)) {
-    type = ShapeFlags.ARRAY_CHILDREN
+    type = ShapeFlags.ARRAY_CHILDREN // 16
   } else if (typeof children === 'object') {
     if (shapeFlag & ShapeFlags.ELEMENT || shapeFlag & ShapeFlags.TELEPORT) {
       // Normalize slot to plain children for plain element and Teleport
