@@ -132,7 +132,23 @@ export function createAppAPI<HostElement>(
       rootProps = null
     }
 
-    // 获取当前实例的上下文
+    // 获取当前实例的上下文 createAppContext:
+    // return {
+    //   app: null as any,
+    //   config: {
+    //     isNativeTag: NO,
+    //     performance: false,
+    //     globalProperties: {},
+    //     optionMergeStrategies: {},
+    //     isCustomElement: NO,
+    //     errorHandler: undefined,
+    //     warnHandler: undefined
+    //   },
+    //   mixins: [],
+    //   components: {},
+    //   directives: {},
+    //   provides: Object.create(null)
+    // }
     const context = createAppContext()
     // 用set集合存储插件，可避免重复
     const installedPlugins = new Set()
@@ -142,13 +158,13 @@ export function createAppAPI<HostElement>(
     // 以下这些方法都反回了app实例，所以可以链式调用
     // 对比Vue2以下方法由静态方法转为了实例方法
     // 为何要调整为实例方法？
-      // 1. 避免实例之间的污染
-      // 2. 语义上更好理解
-      // 3. 摇树优化 tree-shake
-         // 摇树优化:
-              // 如 app.use({install(){}})初始化了一个插件
-              // 但是在代码中，实际没有使用到这个插件
-              // 所代码在打包时，这个插件是不会被打包进去
+    // 1. 避免实例之间的污染
+    // 2. 语义上更好理解
+    // 3. 摇树优化 tree-shake
+    // 摇树优化:
+    // 如 app.use({install(){}})初始化了一个插件
+    // 但是在代码中，实际没有使用到这个插件
+    // 所代码在打包时，这个插件是不会被打包进去
 
     // 应用程序实例
     const app: App = (context.app = {

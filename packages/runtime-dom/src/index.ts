@@ -35,7 +35,7 @@ let enabledHydration = false
 function ensureRenderer() {
   // 渲染器
   // 单例模式
-  // 存就返回，不存在创建
+  // 存在就返回，不存在创建
   // rendererOptions 这里是一些平台特性的操作 如 dom 操作都在这个里面
   return renderer || (renderer = createRenderer<Node, Element>(rendererOptions))
 }
@@ -189,4 +189,5 @@ export { vShow } from './directives/vShow'
 
 // re-export everything from core
 // h, Component, reactivity API, nextTick, flags & types
+// \packages\runtime-core\src\index.ts
 export * from '@vue/runtime-core'
