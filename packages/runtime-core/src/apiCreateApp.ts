@@ -125,7 +125,7 @@ export function createAppAPI<HostElement>(
   render: RootRenderFunction,
   hydrate?: RootHydrateFunction
 ): CreateAppFunction<HostElement> {
-  // 外面返回的方法
+  // 返回给外面的方法， rootComponent就是options
   return function createApp(rootComponent, rootProps = null) {
     if (rootProps != null && !isObject(rootProps)) {
       __DEV__ && warn(`root props passed to app.mount() must be an object.`)
@@ -195,6 +195,7 @@ export function createAppAPI<HostElement>(
 
       // 混入方法初始化
       mixin(mixin: ComponentOptions) {
+        // 如果支持vue2.0 options api 则执行mixin初始化
         if (__FEATURE_OPTIONS_API__) {
           if (!context.mixins.includes(mixin)) {
             context.mixins.push(mixin)
@@ -252,6 +253,7 @@ export function createAppAPI<HostElement>(
         isHydrate?: boolean,
         isSVG?: boolean
       ): any {
+        // 如果没有挂载，则走挂载
         if (!isMounted) {
           // 初始化的虚拟dom树
           // shapeFlag 也在里面定义  - 对 vnode 类型信息编码
@@ -286,7 +288,7 @@ export function createAppAPI<HostElement>(
           if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
             devtoolsInitApp(app, version)
           }
-
+          // ! 是 ts中的 非空断言操作符 表示 断言 component 非空 一定有值
           return vnode.component!.proxy
         } else if (__DEV__) {
           warn(

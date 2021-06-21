@@ -502,6 +502,8 @@ function baseCreateRenderer(
     }
     // 获取新节点的类型
     const { type, ref, shapeFlag } = n2
+    // vue3 中vnode 的type类型 如果是元素则是 { type: 'dev' }
+    // 如果是组件 就是组件的配置对象(options) { type: { data(){} ....} }
     switch (type) {
       // 文本
       case Text:
@@ -548,6 +550,9 @@ function baseCreateRenderer(
             optimized
           )
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          // ShapeFlags.COMPONENT 为对象组和函数组件的集合  这里 & 用二进制比较
+          // STATEFUL_COMPONENT  1 << 2      STATEFUL_COMPONENT 1 << 1
+
           // 对象就走这 vue3中对象就是组件
           // 组件处理
 
@@ -1314,6 +1319,7 @@ function baseCreateRenderer(
     // 初始化时为null  因为 container 为#app 调用mount时传入的id
     // 所以没有旧的vnode
     if (n1 == null) {
+      // 有缓存走这里
       if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
         ;(parentComponent!.ctx as KeepAliveContext).activate(
           n2,
@@ -1323,7 +1329,7 @@ function baseCreateRenderer(
           optimized
         )
       } else {
-        // 所以初始化走这
+        // 初始化没有缓存  所以初始化走这
         mountComponent(
           n2,
           container,
@@ -1383,7 +1389,8 @@ function baseCreateRenderer(
     //  4. 解析自己的插槽
     //  5. 同时会把自己内部的一些数据进行响应式的处理 如: props(属性) methosds(方法) data computed watch
 
-    // 这里其实做的也是这些操作
+    // 这里其实做的也是这些操作 比如要看响应式数据 源码 就在这里面看
+    // 组件实例安装
     setupComponent(instance)
     if (__DEV__) {
       endMeasure(instance, `init`)
@@ -1402,7 +1409,7 @@ function baseCreateRenderer(
       }
       return
     }
-    // 增加渲染函数副作用
+    // 安装渲染函数副作用 相当于 vue2中的 updateComponent + watcher
     // 里面执行的是渲染函数，然后让当前的渲染函数重新获得虚拟dom
     // 当前组件重新更新，然后重新patch
     setupRenderEffect(
@@ -1469,6 +1476,7 @@ function baseCreateRenderer(
     // 函数内部访问到的数据有变化，则函数就会重新执行
     // 和vue2比这里没有了watcher
     instance.update = effect(function componentEffect() {
+      // 首次 isMounted 为false 走初始化流程
       if (!instance.isMounted) {
         let vnodeHook: VNodeHook | null | undefined
         const { el, props } = initialVNode
@@ -1488,7 +1496,7 @@ function baseCreateRenderer(
           startMeasure(instance, `render`)
         }
         // 先获取当前根组件的vnode
-        // 其实就是执行了render函数得到了虚拟dom
+        // 其实就是执行了组件 render函数得到了虚拟dom
         const subTree = (instance.subTree = renderComponentRoot(instance))
         if (__DEV__) {
           endMeasure(instance, `render`)
@@ -1513,12 +1521,32 @@ function baseCreateRenderer(
           if (__DEV__) {
             startMeasure(instance, `patch`)
           }
-          // 初始化patch
-          // 由于初始化时，是一个 Fragment
+          // 初始化patch 向下递归更新  首次是完整递归创建
           // 走了patch后内部会分别对和类型节点做处理，并递归查找
+          // 由于初始化时，如果有多个同级节点 则patch第二次进来 将会是一个 Fragment
+          // 如果只有一个节点，则节点是什么类型，就走相应的处理
+          /*
+
+          这种情况第二次 进来就是 处理 元素 Element h3
+          <div id="ap">
+            <h3>{{name}}</h3>
+          </div>
+
+          这种情况第二次 进来就是 处理 文本 Text  {{name}}
+          <div id="ap">
+            {{name}}
+          </div>
+
+          这种情况第二次 进来就是 处理 分片 Fragment
+          <div id="ap">
+            <h3>{{name}}</h3>
+            <h3>{{age}}</h3>
+          </div>
+
+          * */
           patch(
             null,
-            subTree, // 初始化时是一个 Fragment
+            subTree,
             container,
             anchor,
             instance,
@@ -2357,7 +2385,7 @@ function baseCreateRenderer(
 
   // render函数的作用，就是把vnode转换成真实的dom并追加到container中
   const render: RootRenderFunction = (vnode, container, isSVG) => {
-    // container 初始化时为 #app
+    // container 初始化时为 #app 是一个真实dom
     if (vnode == null) {
       // vnode 新节点不存在
       // 并且存在老节点，则卸载老节点

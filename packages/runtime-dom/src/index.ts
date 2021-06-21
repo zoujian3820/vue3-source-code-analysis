@@ -81,7 +81,7 @@ export const createApp = ((...args) => {
     }
     // clear content before mounting
     // 清除当前根元素(#app)的内容
-    // 因为上面已经拿了他的innerHtml当template
+    // 然后做挂载处理，并渲染到页面上
     container.innerHTML = ''
     const proxy = mount(container, false, container instanceof SVGElement)
     if (container instanceof Element) {

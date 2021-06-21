@@ -42,6 +42,7 @@ export function parseStringStyle(cssText: string): NormalizedStyle {
     if (item) {
       // 遍历 并用使 ':' 切割成 ['color', '#333']
       const tmp = item.split(propertyDelimiterRE)
+      //最后 转换成 对象 {color: '#333'}
       tmp.length > 1 && (ret[tmp[0].trim()] = tmp[1].trim())
     }
   })

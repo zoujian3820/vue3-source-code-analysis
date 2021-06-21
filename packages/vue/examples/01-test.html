@@ -8,7 +8,10 @@
     <title>Document</title>
 </head>
 <body>
-<div id="app">{{count}}</div>
+<div id="app">
+    <div>6666</div>
+    <p>{{count}}</p>
+</div>
 <script src="../dist/vue.global.js"></script>
 <script>
     const { createApp } = Vue
@@ -18,7 +21,7 @@
                 count: 30
             }
         }
-    }).mount('#app')
+    }, { class: ["aa1", "aa2"] }).mount('#app')
 </script>
 </body>
 </html>

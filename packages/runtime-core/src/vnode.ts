@@ -407,7 +407,7 @@ function _createVNode(
       // 判断 style 为数组 则遍历并做类型检测
         // 如果是字符串则标准化一下 (做两次字符串切割) 处理成对象形式
         // 所以样式最好直接写对象形式，以减少转换操作 和 递归
-        // 否则（如：对象 | 数组） 则递归一次，走相应处理
+        // 否则（如：对象 | 数组） 则递归一次，走相应处理 最后全部转换成对象形式反回
       // 如果为对象就直接返回
       props.style = normalizeStyle(style)
     }
@@ -418,6 +418,17 @@ function _createVNode(
   // import { defineComponent, h, createVNode } from "vue";
   // h(HelloWorld, { msg: "HelloWorld" }),
   // createVNode("h1", { class: "hello" }, "HelloWorld")
+
+  //     // 最后要渲染的 element 类型
+  //     ELEMENT = 1,
+  //     // 组件类型
+  //     STATEFUL_COMPONENT = 1 << 2,
+  //     // vnode 的 children 为 string 类型
+  //     TEXT_CHILDREN = 1 << 3,
+  //     // vnode 的 children 为数组类型
+  //     ARRAY_CHILDREN = 1 << 4,
+  //     // vnode 的 children 为 slots 类型
+  //     SLOTS_CHILDREN = 1 << 5
   const shapeFlag = isString(type)
       // type是字符串，则是元素标签
     ? ShapeFlags.ELEMENT // 1
@@ -426,9 +437,11 @@ function _createVNode(
       : isTeleport(type)
         ? ShapeFlags.TELEPORT  // 64
         : isObject(type)
-          ? ShapeFlags.STATEFUL_COMPONENT  // 4
+            // 对象组件类型
+          ? ShapeFlags.STATEFUL_COMPONENT  // 4  1 << 2
           : isFunction(type)
-            ? ShapeFlags.FUNCTIONAL_COMPONENT  // 2
+              // 函数组件
+            ? ShapeFlags.FUNCTIONAL_COMPONENT  // 2   1 << 1
             : 0
 
   if (__DEV__ && shapeFlag & ShapeFlags.STATEFUL_COMPONENT && isProxy(type)) {
@@ -448,8 +461,8 @@ function _createVNode(
     [ReactiveFlags.SKIP]: true,
     type,
     props,
-    key: props && normalizeKey(props),
-    ref: props && normalizeRef(props),
+    key: props && normalizeKey(props), // 获取组件或元素上的 key 有则 返回 没有则反回 null
+    ref: props && normalizeRef(props), // 获取 ref
     scopeId: currentScopeId,
     slotScopeIds: null,
     children: null,
@@ -464,7 +477,7 @@ function _createVNode(
     target: null,
     targetAnchor: null,
     staticCount: 0,
-    shapeFlag,
+    shapeFlag, // 当前vnode的type 类型 用二进制表示
     patchFlag,
     dynamicProps,
     dynamicChildren: null,
@@ -476,6 +489,9 @@ function _createVNode(
     warn(`VNode created with invalid key (NaN). VNode type:`, vnode.type)
   }
 
+  // 获取子组件  vnode.children  = xxx
+  // 并进行分类处理 如 string 元素 slots
+  // 正常不是 string 元素 那肯定就是 slots
   normalizeChildren(vnode, children)
 
   // normalize suspense children
