@@ -280,8 +280,10 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
       if (n !== undefined) {
         switch (n) {
           case AccessTypes.SETUP:
+            // 先从setup中取值
             return setupState[key]
           case AccessTypes.DATA:
+            // 再从data中取值
             return data[key]
           case AccessTypes.CONTEXT:
             return ctx[key]

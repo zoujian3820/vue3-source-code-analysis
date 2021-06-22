@@ -588,7 +588,8 @@ function setupStatefulComponent(
   // 渲染函数中将来访问的响应式数据都在proxy这里拿
   // 通过 const instance = getCurrentInstance(); 可以在 setup(){}中获取
   // const { ctx, proxy } = instance
-  // PublicInstanceProxyHandlers中会先从setup中去查找属性，如果没有才会去data中查找
+  // instance.ctx 就是vue2中我们熟悉的this  组件实例
+  // PublicInstanceProxyHandlers中会先从setup中去查找属性值，如果没有才会去data中查找
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandlers)
   if (__DEV__) {
     exposePropsOnRenderContext(instance)
@@ -599,20 +600,29 @@ function setupStatefulComponent(
   // PublicInstanceProxyHandlers中会先从setup中去查找属性，如果没有才会去data中查找
   const { setup } = Component
   if (setup) {
+    // 上下文
     const setupContext = (instance.setupContext =
       setup.length > 1 ? createSetupContext(instance) : null)
 
     currentInstance = instance
     pauseTracking()
+    // 调用setup 由于setup调用可能报错，
+    // 所以包了层 callWithErrorHandling 容错处理
     const setupResult = callWithErrorHandling(
       setup,
       instance,
       ErrorCodes.SETUP_FUNCTION,
+      // 此处给 setup函数内 传递了两参数
+      // props  和  上下文 setupContext: { emit, slots, attrs }
+      // 上下文 setupContext 能解构出三个 属性  emit, slots, attrs
+      // setup(props, setupContext) {}
       [__DEV__ ? shallowReadonly(instance.props) : instance.props, setupContext]
     )
     resetTracking()
     currentInstance = null
 
+    // setup的结果可能是个 promise 则是异步组件
+    // setup() { return new Promise }
     if (isPromise(setupResult)) {
       if (isSSR) {
         // return the promise so server-renderer can wait on it
@@ -647,6 +657,8 @@ export function handleSetupResult(
   setupResult: unknown,
   isSSR: boolean
 ) {
+  // setup还能反回一个函数，如果是函数，则是一个渲染函数
+  // setup() { return ()=>{ return <div></div> } }
   if (isFunction(setupResult)) {
     // setup returned an inline render function
     if (__NODE_JS__ && (instance.type as ComponentOptions).__ssrInlineRender) {
@@ -657,6 +669,7 @@ export function handleSetupResult(
       instance.render = setupResult as InternalRenderFunction
     }
   } else if (isObject(setupResult)) {
+    // setup反回一个对象的处理
     if (__DEV__ && isVNode(setupResult)) {
       warn(
         `setup() should not return VNodes directly - ` +

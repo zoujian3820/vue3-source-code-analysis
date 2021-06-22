@@ -889,6 +889,7 @@ function resolveData(
     )
   }
   shouldCacheAccess = false
+  // 把data 执行一遍并传入publicThis(instance.proxy), 获取data中的数据
   const data = dataFn.call(publicThis, publicThis)
   shouldCacheAccess = true
   if (__DEV__ && isPromise(data)) {
@@ -901,6 +902,7 @@ function resolveData(
   if (!isObject(data)) {
     __DEV__ && warn(`data() should return an object.`)
   } else if (instance.data === EMPTY_OBJ) {
+    // 如果对象存在，用reactive做响应式处理
     instance.data = reactive(data)
   } else {
     // existing data: this is a mixin or extends.

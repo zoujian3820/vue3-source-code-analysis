@@ -1495,9 +1495,16 @@ function baseCreateRenderer(
         if (__DEV__) {
           startMeasure(instance, `render`)
         }
+
+  // **********************************************************************
         // 先获取当前根组件的vnode
         // 其实就是执行了组件 render函数得到了虚拟dom
+        // 所以这次调用就触发了依赖收集
+        // 这意味着当 subTree中的数据发生变更，
+        // 则会重新触发 componentEffect的执行
+        // 由于上面初始化 isMounted 做了判断，所以重新执行不会走这里
         const subTree = (instance.subTree = renderComponentRoot(instance))
+
         if (__DEV__) {
           endMeasure(instance, `render`)
         }
@@ -1618,16 +1625,20 @@ function baseCreateRenderer(
         if (__DEV__) {
           startMeasure(instance, `render`)
         }
+        // 重新获得最新渲染的结果
         const nextTree = renderComponentRoot(instance)
         if (__DEV__) {
           endMeasure(instance, `render`)
         }
+        // 然后把之前旧的虚拟dom  subTree 做保存
         const prevTree = instance.subTree
+        // 然后把当前subTree 更改为最新的 虚拟dom
         instance.subTree = nextTree
 
         if (__DEV__) {
           startMeasure(instance, `patch`)
         }
+        // 这里走 diff 更新
         patch(
           prevTree,
           nextTree,
@@ -2384,6 +2395,7 @@ function baseCreateRenderer(
   }
 
   // render函数的作用，就是把vnode转换成真实的dom并追加到container中
+  // 初始化时是在 runtime-core\src\apiCreateApp.ts => mount 方法调用了
   const render: RootRenderFunction = (vnode, container, isSVG) => {
     // container 初始化时为 #app 是一个真实dom
     if (vnode == null) {
